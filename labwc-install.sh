@@ -1,5 +1,6 @@
 #!/bin/bash
-# Labwc Installer for Debian 13
+# Labwc Installer for Debian 13 (TTY Safe Version - Fixed)
+
 set -e
 
 # 1. Check Root (Must run as normal user)
@@ -20,9 +21,10 @@ sudo apt install -y curl wget apt-transport-https ca-certificates lsb-release
 echo ">> Configuring APT sources to USTC Mirror..."
 sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
 sudo tee /etc/apt/sources.list << 'EOF'
-deb https://mirrors.ustc.edu.cn/debian/ trixie main
-deb https://mirrors.ustc.edu.cn/debian/ trixie-updates main
-deb https://mirrors.ustc.edu.cn/debian-security trixie-security main
+deb https://mirrors.ustc.edu.cn/debian/ trixie main contrib non-free non-free-firmware
+deb https://mirrors.ustc.edu.cn/debian/ trixie-updates main contrib non-free non-free-firmware
+deb https://mirrors.ustc.edu.cn/debian-security trixie-security main contrib non-free non-free-firmware
+EOF
 
 echo ">> Updating package lists..."
 sudo apt update
@@ -54,7 +56,7 @@ sudo apt install -y \
 mkdir -p ~/.config/labwc ~/.config/waybar
 
 # 6. Configure Environment Variables
-cat > ~/.config/labwc/environment << EOF
+cat > ~/.config/labwc/environment << 'EOF'
 XDG_CURRENT_DESKTOP=labwc
 XDG_SESSION_TYPE=wayland
 XDG_SESSION_DESKTOP=labwc
@@ -67,7 +69,7 @@ EOF
 #    - dbus-update-activation-environment: Ensure D-Bus environment is set
 #    - pipewire services: Manual start for TTY-based sessions
 #    - nm-applet: Network tray icon
-cat > ~/.config/labwc/autostart << EOF
+cat > ~/.config/labwc/autostart << 'EOF'
 #!/bin/sh
 # Ensure D-Bus environment is updated
 dbus-update-activation-environment --all &
@@ -88,7 +90,7 @@ EOF
 chmod +x ~/.config/labwc/autostart
 
 # 8. Menu (Right-click)
-cat > ~/.config/labwc/menu.xml << EOF
+cat > ~/.config/labwc/menu.xml << 'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <openbox_menu>
   <menu id="root-menu">
@@ -109,7 +111,7 @@ EOF
 # 9. RC.xml (Keybinds and Theme)
 #    Note: Adwaita theme depends on gnome-themes-extra package
 #    Added screenshot keybinds using grim and slurp
-cat > ~/.config/labwc/rc.xml << EOF
+cat > ~/.config/labwc/rc.xml << 'EOF'
 <?xml version="1.0"?>
 <labwc_config>
   <keyboard>
@@ -120,8 +122,8 @@ cat > ~/.config/labwc/rc.xml << EOF
     <keybind key="A-Tab"><action name="NextWindow"/></keybind>
     <keybind key="W-l"><action name="Execute" command="swaylock -f -c 000000"/></keybind>
     <keybind key="W-S-e"><action name="Exit"/></keybind>
-    <keybind key="Print"><action name="Execute" command="grim ~/screenshot-\$(date +%Y%m%d-%H%M%S).png"/></keybind>
-    <keybind key="W-Print"><action name="Execute" command="grim -g '\$(slurp)' ~/screenshot-\$(date +%Y%m%d-%H%M%S).png"/></keybind>
+    <keybind key="Print"><action name="Execute" command="sh -c 'grim ~/screenshot-$(date +%Y%m%d-%H%M%S).png'"/></keybind>
+    <keybind key="W-Print"><action name="Execute" command="sh -c 'grim -g \"$(slurp)\" ~/screenshot-$(date +%Y%m%d-%H%M%S).png'"/></keybind>
   </keyboard>
   <theme>
     <name>Adwaita</name>
@@ -134,7 +136,7 @@ cat > ~/.config/labwc/rc.xml << EOF
 EOF
 
 # 10. Waybar Configuration
-cat > ~/.config/waybar/config << EOF
+cat > ~/.config/waybar/config << 'EOF'
 {
     "layer": "top",
     "height": 30,
@@ -162,7 +164,7 @@ cat > ~/.config/waybar/config << EOF
 }
 EOF
 
-cat > ~/.config/waybar/style.css << EOF
+cat > ~/.config/waybar/style.css << 'EOF'
 * { font-family: "JetBrains Mono", "FontAwesome 6 Free", "FontAwesome"; font-size: 13px; }
 window#waybar { background: #2e3440; color: #ffffff; }
 EOF
