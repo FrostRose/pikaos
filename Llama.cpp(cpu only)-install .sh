@@ -20,7 +20,7 @@ sudo apt install -y \
 
 # 2. Setup Environment
 echo ">> Writing configuration to .bashrc..."
-# 使用单引号 'EOF' 确保变量在用户登录时才解析
+
 cat >> ~/.bashrc << 'EOF'
 
 # llama.cpp specific env
