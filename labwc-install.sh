@@ -44,6 +44,7 @@ sudo tee /etc/apt/sources.list << 'EOF'
 deb https://mirrors.ustc.edu.cn/debian/ trixie main
 deb https://mirrors.ustc.edu.cn/debian/ trixie-updates main
 deb https://mirrors.ustc.edu.cn/debian-security trixie-security main
+EOF
 
 echo ">> Updating package lists..."
 sudo apt update
