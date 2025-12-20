@@ -1,27 +1,37 @@
 #!/bin/bash
-# Labwc Installer for Debian 13 (Trixie) - TTY Optimized version (Improved)
+# Labwc Installer for Debian 13 (Trixie) - TTY Optimized (English Output)
 
 set -e
 
 # 1. Check Root
 if [ "$(id -u)" -eq 0 ]; then
-    echo "Please run as normal user (not root)."
+    echo "Error: Please run as a normal user (without sudo)."
     exit 1
 fi
 
-echo ">> Updating System..."
+# 2. Backup and Update Sources (USTC Mirror)
+echo ">> Configuring APT sources (USTC Mirror)..."
+sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
+sudo tee /etc/apt/sources.list << 'EOF'
+deb https://mirrors.ustc.edu.cn/debian/ trixie main contrib non-free non-free-firmware
+deb https://mirrors.ustc.edu.cn/debian/ trixie-updates main contrib non-free non-free-firmware
+deb https://mirrors.ustc.edu.cn/debian-security trixie-security main contrib non-free non-free-firmware
+EOF
+
+echo ">> Updating package lists..."
 sudo apt update
 
-echo ">> Installing Packages..."
-# Core + extra useful packages
+# 3. Install Packages
+echo ">> Installing core packages and dependencies..."
 sudo apt install -y labwc waybar swaybg foot fuzzel pcmanfm lxpolkit \
     xwayland grim slurp mako-notifier wireplumber pipewire-pulse \
     fonts-jetbrains-mono otf-font-awesome swaylock swayidle curl
 
-echo ">> Creating Configs..."
+# 4. Create Config Directories
+echo ">> Creating configuration directories..."
 mkdir -p ~/.config/labwc ~/.config/waybar
 
-# 2. Environment
+# 5. Environment Setup
 cat > ~/.config/labwc/environment << EOF
 XDG_CURRENT_DESKTOP=labwc
 XDG_SESSION_TYPE=wayland
@@ -30,7 +40,7 @@ QT_QPA_PLATFORM=wayland
 GTK_BACKEND=wayland
 EOF
 
-# 3. Autostart
+# 6. Autostart Script
 cat > ~/.config/labwc/autostart << EOF
 #!/bin/sh
 pipewire &
@@ -44,21 +54,21 @@ swaybg -c "#2e3440" &
 EOF
 chmod +x ~/.config/labwc/autostart
 
-# 4. Basic Menu (optional simple menu)
+# 7. Menu Configuration (menu.xml)
 cat > ~/.config/labwc/menu.xml << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <openbox_menu>
   <menu id="root-menu">
-    <item label="Terminal"><action name="Execute" command="foot"/></item>
+    <item label="Terminal (Foot)"><action name="Execute" command="foot"/></item>
     <item label="File Manager"><action name="Execute" command="pcmanfm"/></item>
-    <item label="Menu"><action name="Execute" command="fuzzel"/></item>
+    <item label="App Launcher"><action name="Execute" command="fuzzel"/></item>
     <separator/>
-    <item label="Exit"><action name="Exit"/></item>
+    <item label="Exit Labwc"><action name="Exit"/></item>
   </menu>
 </openbox_menu>
 EOF
 
-# 5. Keybinds and Config
+# 8. Keybinds and Core Config (rc.xml)
 cat > ~/.config/labwc/rc.xml << EOF
 <?xml version="1.0"?>
 <labwc_config>
@@ -85,7 +95,7 @@ cat > ~/.config/labwc/rc.xml << EOF
 </labwc_config>
 EOF
 
-# 6. Waybar (more useful modules)
+# 9. Waybar Configuration
 cat > ~/.config/waybar/config << EOF
 {
     "layer": "top",
@@ -106,6 +116,8 @@ cat > ~/.config/waybar/style.css << EOF
 window#waybar { background: #2e3440; color: #fff; }
 EOF
 
-echo ">> Installation Complete."
-echo ">> To start from TTY: log in, then type 'labwc-session' or 'dbus-run-session labwc'"
-echo ">> Lock screen: Super+L"
+echo "-------------------------------------------------------"
+echo ">> Installation Complete!"
+echo ">> Sources backup created at /etc/apt/sources.list.bak"
+echo ">> How to start: Log in to TTY and run: dbus-run-session labwc"
+echo ">> Keybinds: Super+Enter (Terminal), Super+D (Launcher), Super+L (Lock)"
