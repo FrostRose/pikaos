@@ -23,10 +23,9 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 if confirm ">> 1. Configure USTC Mirror for APT?"; then
     sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
     sudo tee /etc/apt/sources.list << 'EOF'
-deb https://mirrors.ustc.edu.cn/debian/ trixie main contrib non-free non-free-firmware
-deb https://mirrors.ustc.edu.cn/debian/ trixie-updates main contrib non-free non-free-firmware
-deb https://mirrors.ustc.edu.cn/debian-security trixie-security main contrib non-free non-free-firmware
-EOF
+deb http://mirrors.ustc.edu.cn/debian/ trixie main 
+deb http://mirrors.ustc.edu.cn/debian/ trixie-updates main 
+deb http://mirrors.ustc.edu.cn/debian-security trixie-security main
     sudo apt update
 fi
 
