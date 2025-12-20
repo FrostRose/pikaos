@@ -2,15 +2,6 @@
 # Labwc Installer for Debian 13
 set -e
 
-# --- 0. Helper Functions ---
-confirm() {
-    read -r -p "${1} [y/N] " response
-    case "$response" in
-        [yY][eE][sS]|[yY]) true ;;
-        *) false ;;
-    esac
-}
-
 # --- 1. User Check ---
 if [ "$(id -u)" -eq 0 ]; then
     echo "Error: Please run as a normal user (without sudo)."
