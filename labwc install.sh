@@ -1,4 +1,3 @@
-```bash
 #!/bin/bash
 # Labwc Installer for Debian 13
 set -e
@@ -192,6 +191,3 @@ echo "   Win+Print       : Screenshot (selection)"
 echo ""
 echo ">> Right-click on desktop to access menu"
 echo "-------------------------------------------------------"
-</document_content>
-</document>
-</documents>
