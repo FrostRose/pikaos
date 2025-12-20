@@ -15,11 +15,6 @@ echo "This script will configure USTC mirrors for Debian 13"
 echo "and install a complete Wayland desktop environment."
 echo ""
 
-if ! confirm ">> Proceed with installation?"; then
-    echo "Aborted."
-    exit 0
-fi
-
 echo ">> Preparing system..."
 
 # 2. Install HTTPS support first
