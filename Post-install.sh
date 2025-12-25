@@ -70,8 +70,8 @@ nala install -y \
 
 # 移除无用软件
 echo -e "${YELLOW}正在清理无用软件...${NC}"
-nala remove -y fortune-* debian-reference-* malcontent-* nala autoremove -y --purge
 nala update
+nala remove -y fortune-* debian-reference-* malcontent-*
 
 # ==========================================
 # 2.3 Flatpak 配置
