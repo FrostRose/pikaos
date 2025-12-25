@@ -51,9 +51,7 @@ if ! command -v nala &> /dev/null; then
     apt update && apt install -y nala
 fi
 
-echo -e "${YELLOW}注意: 接下来 nala fetch 需要您手动选择最快的镜像源 (按数字键选择，回车确认)${NC}"
-read -p "按回车键继续..."
-nala fetch
+# update
 nala update
 
 # ==========================================
