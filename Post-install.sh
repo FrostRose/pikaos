@@ -51,9 +51,6 @@ if ! command -v nala &> /dev/null; then
     apt update && apt install -y nala
 fi
 
-# update
-nala update
-
 # ==========================================
 # 2.2 桌面环境与常用软件
 # ==========================================
