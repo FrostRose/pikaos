@@ -48,7 +48,7 @@ sudo nala install -y \
   thermald
 
 echo -e "${GREEN}[3/7] Cleaning up bloatware...${NC}"
-sudo nala remove -y fortune-* debian-reference-* malcontent-*
+sudo nala remove -y fortune-* debian-reference-* malcontent-* yelp
 
 # --- Step 2: Flatpak Configuration ---
 echo -e "${GREEN}[4/7] Configuring Flatpak...${NC}"
