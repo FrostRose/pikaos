@@ -36,11 +36,11 @@ echo "Starting System Configuration..."
 echo ""
 echo "### 2.1 Software Sources"
 echo "Installing nala and updating..."
-sudo apt install nala && sudo nala update
+sudo apt update && sudo apt install nala && sudo nala update
 
 echo ""
 if ask_run "### 2.1.5 (Optional) Run Pika OS 1 cleanup (remove gnome/flatpak)?" "N"; then
-    sudo apt autoremove --purge "gnome*" "pika-gnome*" flatpak
+    sudo apt autoremove --purge "gnome*" "pika-gnome*" firefox
 fi
 
 echo ""
