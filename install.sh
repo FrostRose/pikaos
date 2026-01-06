@@ -170,7 +170,6 @@ echo "### 4.1 General Optimization"
 echo "# systemd optimization"
 systemctl --user enable --now fstrim.timer
 systemctl --user enable --now thermald
-systemctl --user enable --now localsearch-3.service
 
 echo "# Transparent Huge Pages (THP) optimization"
 echo always | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
