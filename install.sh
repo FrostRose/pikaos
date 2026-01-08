@@ -174,8 +174,22 @@ systemctl --user enable --now thermald
 echo "# Transparent Huge Pages (THP) optimization"
 echo always | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
 
-echo "# zram optimization"
-echo -e "ALGO=lz4\nPERCENT=100\nPRIORITY=100" | sudo tee /etc/default/zramswap > /dev/null && sudo systemctl restart zramswap
+echo "1) Enable/Optimize zRAM"
+echo "2) Disable/Mask zRAM"
+read -p "Choice [1-2]: " c
+
+if [ "$c" == "1" ]; then
+    echo -e "ALGO=lz4\nPERCENT=100\nPRIORITY=100" | sudo tee /etc/default/zramswap > /dev/null
+    systemctl enable --now zramswap
+    echo "Done. zRAM is active."
+elif [ "$c" == "2" ]; then
+    systemctl stop zramswap
+    systemctl disable zramswap
+    systemctl mask zramswap
+    echo "Done. zRAM is masked."
+else
+    echo "Invalid."
+fi
 
 
 echo ""
