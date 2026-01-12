@@ -12,20 +12,20 @@ sudo nala install -y \
 # 2. 环境
 export CC=clang-20
 export CXX=clang++-20
-PHY_CORES=$(lscpu -b -p=Core,Socket | grep -v '^#' | sort -u | wc -l)
 echo "always" | sudo tee /sys/kernel/mm/transparent_hugepage/enabled > /dev/null
 echo "always" | sudo tee /sys/kernel/mm/transparent_hugepage/defrag > /dev/null
 sudo rm -f /usr/lib/x86_64-linux-gnu/libmimalloc.so
 sudo ln -sf /usr/lib/x86_64-linux-gnu/libmimalloc.so.3.0 /usr/lib/x86_64-linux-gnu/libmimalloc.so
 sudo ldconfig
 COMMON_FLAGS="-O3 -DNDEBUG -march=native -mtune=native -fPIC \
-    -mllvm -vp-counters-per-site=10 \
     -mllvm -polly \
     -mllvm -polly-vectorizer=stripmine \
     -mllvm -polly-run-inliner \
     -mllvm -polly-invariant-load-hoisting \
+    -fno-math-errno -fno-trapping-math \
     -funroll-loops -fvectorize -fslp-vectorize \
     -fno-stack-protector -fomit-frame-pointer \
+    -fno-plt \
     -ffunction-sections -fdata-sections -falign-functions=32"
 export LDFLAGS="-fuse-ld=lld -lmimalloc -Wl,--icf=all -Wl,--gc-sections -Wl,-O3"
 
@@ -40,6 +40,7 @@ rm -rf build
 cmake -B build -GNinja \
     -DCMAKE_BUILD_TYPE=Release \
     -DGGML_NATIVE=ON -DGGML_LTO=ON -DGGML_BLAS=ON -DGGML_BLAS_VENDOR=OpenBLAS \
+    -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE \
     -DGGML_OPENMP=ON -DGGML_STATIC=OFF \
     -DCMAKE_C_FLAGS="$COMMON_FLAGS" \
     -DCMAKE_CXX_FLAGS="$COMMON_FLAGS" \
@@ -53,9 +54,11 @@ function llamacpp() {
     local PHY_CORES=$(lscpu -b -p=Core,Socket | grep -v '^#' | sort -u | wc -l)
     export OPENBLAS_NUM_THREADS=$PHY_CORES
     export OMP_NUM_THREADS=$PHY_CORES
-    export OMP_PROC_BIND=CLOSE
+    export OMP_PROC_BIND=TRUE
     export OMP_PLACES=CORES
+    export OMP_WAIT_POLICY=ACTIVE
     export MIMALLOC_RESERVE_HUGE_OS_PAGES=1
+    export MIMALLOC_LARGE_OS_PAGES=1 
     $HOME/llama.cpp/build/bin/llama-server "$@"
 }
 export PATH="$HOME/llama.cpp/build/bin:$PATH"
