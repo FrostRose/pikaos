@@ -63,7 +63,6 @@ function llamacpp() {
     export MIMALLOC_LARGE_OS_PAGES=1
     $HOME/llama.cpp/build/bin/llama-server "$@"
 }
-export PATH="$HOME/llama.cpp/build/bin:$PATH"
 EOF
 fi
 source ~/.bashrc
