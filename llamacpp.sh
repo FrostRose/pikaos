@@ -74,13 +74,11 @@ function llamacpp() {
     export OMP_PROC_BIND=TRUE
     export OMP_PLACES=CORES
     export OMP_WAIT_POLICY=ACTIVE
-    export MIMALLOC_RESERVE_HUGE_OS_PAGES=4
     export MIMALLOC_LARGE_OS_PAGES=1
     export MIMALLOC_EAGER_COMMIT=1
     export MIMALLOC_PAGE_RESET=0
     $HOME/llama.cpp/build/bin/llama-server "$@"
 }
-export PATH="$HOME/llama.cpp/build/bin:$PATH"
 EOF
 fi
 source ~/.bashrc
