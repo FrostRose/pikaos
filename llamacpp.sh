@@ -14,28 +14,35 @@ export CC=clang-20
 export CXX=clang++-20
 echo "always" | sudo tee /sys/kernel/mm/transparent_hugepage/enabled > /dev/null
 echo "always" | sudo tee /sys/kernel/mm/transparent_hugepage/defrag > /dev/null
-sudo rm -f /usr/lib/x86_64-linux-gnu/libmimalloc.so
-sudo ln -sf /usr/lib/x86_64-linux-gnu/libmimalloc.so.3.0 /usr/lib/x86_64-linux-gnu/libmimalloc.so
-sudo ldconfig
+if [ -f "/usr/lib/x86_64-linux-gnu/libmimalloc.so.3.0" ]; then
+    sudo ln -sf /usr/lib/x86_64-linux-gnu/libmimalloc.so.3.0 /usr/lib/x86_64-linux-gnu/libmimalloc.so
+    sudo ldconfig
+fi
 
-COMPILE_FLAGS="-O3 -DNDEBUG -march=native -mtune=native -mprefer-vector-width=256 \
-    -fvectorize -fslp-vectorize -fPIC \
-    -mllvm -polly \
+
+# 3. 编译标志 (核心优化区)
+
+COMMON_FLAGS="-O3 -DNDEBUG -march=native -mtune=native -mprefer-vector-width=512 \
+    -flto=thin \
+    -fvectorize -fslp-vectorize \
+    -fstrict-vtable-pointers -fwhole-program-vtables \
+    -funroll-loops -fmerge-all-constants \
+    -fno-math-errno -fno-trapping-math -fno-signed-zeros \
+    -fno-stack-protector -fomit-frame-pointer \
+    -fno-plt -fno-semantic-interposition \
+    -ffunction-sections -fdata-sections -falign-functions=64 -falign-loops=32 \
+    -fforce-enable-int128"
+POLLY_FLAGS="-mllvm -polly \
     -mllvm -polly-vectorizer=stripmine \
     -mllvm -polly-run-inliner \
     -mllvm -polly-invariant-load-hoisting \
     -mllvm -polly-ast-use-context \
+    -mllvm -polly-parallel=false \
     -mllvm -polly-detect-profitability-min-per-loop-insts=40 \
     -mllvm -inline-threshold=1500 \
-    -mllvm -unroll-threshold=750 \
-    -fno-math-errno -fno-trapping-math \
-    -funroll-loops -fmerge-all-constants \
-	-fslp-vectorize \
-    -fno-stack-protector -fomit-frame-pointer \
-    -fno-plt -fno-semantic-interposition \
-    -ffunction-sections -fdata-sections -falign-functions=64 \
-    -fforce-enable-int128 -falign-loops=32"
-
+    -mllvm -unroll-threshold=750"
+export CFLAGS="$COMMON_FLAGS $POLLY_FLAGS"
+export CXXFLAGS="$COMMON_FLAGS $POLLY_FLAGS"
 export LDFLAGS="-fuse-ld=lld -lmimalloc \
     -flto=thin -fwhole-program-vtables \
     -Wl,--icf=all -Wl,--gc-sections \
@@ -46,27 +53,31 @@ export LDFLAGS="-fuse-ld=lld -lmimalloc \
     -Wl,--sort-common \
     -Wl,--as-needed"
 
-# 2.1  前置
+# 4. 源码拉取
 if [ ! -d "llama.cpp" ]; then
     git clone https://github.com/ggml-org/llama.cpp
 fi
 cd llama.cpp
 rm -rf build
 
-# 3. 编译
+
+# 5. 构建指令
 cmake -B build -GNinja \
     -DGGML_OPENMP=ON -DBUILD_SHARED_LIBS=OFF \
-    -DGGML_NATIVE=ON -DGGML_LTO=ON -DGGML_BLAS=ON -DGGML_BLAS_VENDOR=OpenBLAS \
-    -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE \
+    -DGGML_NATIVE=ON \
+    -DGGML_BLAS=ON -DGGML_BLAS_VENDOR=OpenBLAS \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_C_FLAGS="$COMPILE_FLAGS" \
-    -DCMAKE_CXX_FLAGS="$COMPILE_FLAGS" \
+    -DCMAKE_C_FLAGS="$CFLAGS" \
+    -DCMAKE_CXX_FLAGS="$CXXFLAGS" \
     -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS"
-ninja -C build llama-server
 
-# 4. 运行变量
+ninja -C build llama-server llama-cli
+
+
+# 6. 运行配置
 if ! grep -q "function llamacpp()" ~/.bashrc; then
 cat << 'EOF' >> ~/.bashrc
+
 function llamacpp() {
     local PHY_CORES=$(lscpu -b -p=Core,Socket | grep -v '^#' | sort -u | wc -l)
     export OPENBLAS_NUM_THREADS=$PHY_CORES
@@ -75,10 +86,20 @@ function llamacpp() {
     export OMP_PLACES=CORES
     export OMP_WAIT_POLICY=ACTIVE
     export MIMALLOC_LARGE_OS_PAGES=1
-    export MIMALLOC_EAGER_COMMIT=1
-    export MIMALLOC_PAGE_RESET=0
-    $HOME/llama.cpp/build/bin/llama-server "$@"
+    if [[ "$1" == "cli" ]]; then
+        shift
+        $HOME/llama.cpp/build/bin/llama-cli "$@"
+    else
+        $HOME/llama.cpp/build/bin/llama-server "$@"
+    fi
 }
 EOF
 fi
-source ~/.bashrc
+
+# 7. 完成
+echo "-------------------------------------------------------"
+echo "编译完成！Clang-20 + ThinLTO + Polly + OpenBLAS 已就绪。"
+echo "请执行 'source ~/.bashrc' 加载环境。"
+echo "使用 'llamacpp -m model.gguf ...' 启动 server"
+echo "使用 'llamacpp cli -m model.gguf ...' 启动 cli"
+echo "-------------------------------------------------------"
