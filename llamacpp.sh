@@ -2,16 +2,17 @@
 set -e
 
 # 1. 依赖
+sudo nala update 
 sudo nala install -y \
-  clang-20 lld-20 llvm-20-dev llvm-20-tools libpolly-20-dev libclang-rt-20-dev libomp-20-dev libllvm20 \
+  clang-21 lld-21 llvm-21-dev llvm-21-tools libpolly-21-dev libclang-rt-21-dev libomp-21-dev libllvm21 \
   libopenblas-dev libmimalloc-dev \
   cmake ninja-build ccache pkg-config \
   libcurl4-openssl-dev wget
 
 
 # 2. 环境
-export CC=clang-20
-export CXX=clang++-20
+export CC=clang
+export CXX=clang++
 echo "always" | sudo tee /sys/kernel/mm/transparent_hugepage/enabled > /dev/null
 echo "always" | sudo tee /sys/kernel/mm/transparent_hugepage/defrag > /dev/null
 if [ -f "/usr/lib/x86_64-linux-gnu/libmimalloc.so.3.0" ]; then
