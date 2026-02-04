@@ -35,8 +35,8 @@ echo "Starting System Configuration..."
 
 echo ""
 echo "### 2.1 Software Sources"
-echo "Installing nala and updating..."
-sudo apt update && sudo apt install nala && sudo nala update
+echo "updating..."
+sudo apt update
 
 echo ""
 if ask_run "### 2.1.5 (Optional) Run Pika OS 1 cleanup (remove gnome/flatpak)?" "N"; then
@@ -46,7 +46,7 @@ fi
 echo ""
 echo "### 2.2 Desktop Environment and Common Software"
 echo "Installing essential packages..."
-sudo nala install -y \
+sudo apt install -y \
   gdm3 \
   gnome-terminal \
   flatpak \
@@ -59,9 +59,9 @@ sudo nala install -y \
   fastboot \
   thermald # Intel cooling
 
-sudo nala update
+sudo apt update
 echo "Removing unnecessary packages..."
-sudo nala remove fortune-* debian-reference-* malcontent-* yelp gnome-user-share
+sudo apt remove fortune-* debian-reference-* malcontent-* yelp gnome-user-share
 
 echo ""
 if ask_run "### 2.2.5 (Optional) Install Pika 2 (Kernel Manager & Wallpapers)?" "N"; then
