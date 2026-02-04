@@ -94,71 +94,7 @@ flatpak install --user -y flathub \
   org.telegram.desktop \
   page.tesk.Refine
 
-echo ""
-if ask_run "### 2.4 (Optional) Install Xanmod Kernel?" "N"; then
-    wget -qO - https://dl.xanmod.org/archive.key | gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg
-    echo 'deb [signed-by=/usr/share/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org releases main' | tee /etc/apt/sources.list.d/xanmod-release.list
-    sudo nala update
-    sudo nala install -y linux-xanmod-x64v3
-fi
 
-# ============================================================
-# III. Production Environment
-# ============================================================
-
-echo ""
-if ask_run "### 3.1 (Optional) Configure Docker Environment?" "N"; then
-    
-    echo "Configuring Docker Sources..."
-    sudo nala update
-    sudo nala install -y ca-certificates curl
-    sudo install -m 0755 -d /etc/apt/keyrings
-    sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
-    sudo chmod a+r /etc/apt/keyrings/docker.asc
-
-    # Note: Unquoted EOF to allow variable expansion for VERSION_CODENAME
-    sudo tee /etc/apt/sources.list.d/docker.sources << EOF
-Types: deb
-URIs: https://download.docker.com/linux/debian
-Suites: $(. /etc/os-release && echo "$VERSION_CODENAME")
-Components: stable
-Signed-By: /etc/apt/keyrings/docker.asc
-EOF
-    sudo nala update
-
-    echo "#### 3.1.1 Install Docker"
-    sudo nala install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-    sudo systemctl enable --now docker
-    sudo usermod -aG docker $USER
-    # Note: newgrp starts a new shell, which might interrupt the script. 
-    # executed here but changes apply to current session only if interactive.
-    # We will skip 'newgrp' in the script flow to prevent hanging, 
-    # usually a reboot or re-login is preferred.
-
-    echo "#### 3.1.2 Mirror Sources"
-    sudo mkdir -p /etc/docker
-    sudo mkdir -p /home/docker
-    sudo tee /etc/docker/daemon.json << 'EOF'
-{
-  "data-root": "/home/docker",
-  "registry-mirrors": [
-    "https://docker.xuanyuan.me",
-    "https://docker.m.daocloud.io",
-    "https://dockerproxy.com",
-    "https://hub.rat.dev"
-  ],
-  "log-driver": "json-file",
-  "log-opts": {
-    "max-size": "100m",
-    "max-file": "3"
-  }
-}
-EOF
-
-    sudo systemctl daemon-reload
-    sudo systemctl restart docker
-    echo "Docker configuration complete. Please log out and back in for group changes to take effect."
-fi
 
 # ============================================================
 # IV. System Optimization
@@ -191,35 +127,6 @@ else
     echo "Invalid."
 fi
 
-
-echo ""
-if ask_run "### 4.3 (Optional) Install NVIDIA Graphics Driver?" "N"; then
-    sudo nala update
-
-    echo "# Detect NVIDIA GPU"
-    lspci | grep -i nvidia
-
-    echo "# install"
-    sudo nala install -y \
-      linux-headers-$(uname -r) \
-      nvidia-driver \
-      nvidia-kernel-dkms \
-      firmware-misc-nonfree
-
-    echo "# For Docker"
-    sudo nala install -y nvidia-container-toolkit
-    sudo nvidia-ctk runtime configure --runtime=docker
-    sudo systemctl restart docker
-
-    echo "# For Wayland"
-    echo "options nvidia-drm modeset=1 fbdev=1" | sudo tee /etc/modprobe.d/nvidia-options.conf
-    sudo update-initramfs -u
-
-    echo "NVIDIA drivers installed. System reboot is recommended."
-    if ask_run "Reboot now?" "Y"; then
-        sudo reboot
-    fi
-fi
 
 echo ""
 echo "Script execution completed."
