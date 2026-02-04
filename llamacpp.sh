@@ -2,7 +2,7 @@
 set -e
 
 # ─── 1. 依赖 ─────────────────────────────────────────────────────────
-sudo nala install -y \
+sudo apt install -y \
   clang-21 llvm-21-dev \
   mold \
   libopenblas-dev libmimalloc-dev \
