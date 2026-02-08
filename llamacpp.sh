@@ -1,50 +1,52 @@
 #!/bin/bash
 set -e
 
-# ─── 1. 依赖 ─────────────────────────────────────────────────────────
+# 1. install
 sudo apt install -y \
-  clang-21 llvm-21-dev \
+  clang \
   mold \
   libopenblas-dev libmimalloc-dev \
   cmake ninja-build ccache pkg-config \
-  libcurl4-openssl-dev git \
-  hwloc
+  libcurl4-openssl-dev git
 
-# ─── 2. 前置：shallow clone ──────────────────────────────────────────
+# 2. clone
 if [ ! -d "llama.cpp" ]; then
     git clone --depth=1 https://github.com/ggml-org/llama.cpp
 fi
 
-# ─── 3. 编译器与路径 ─────────────────────────────────────────────────
-export CC=clang-21
-export CXX=clang++-21
-export COMMON_FLAGS="-fno-math-errno -fno-trapping-math -falign-functions=64"
+# 3. config
+MIMALLOC_LIB=$(find /usr/lib/x86_64-linux-gnu -name "libmimalloc.so" 2>/dev/null | head -n 1)
+if [ -z "$MIMALLOC_LIB" ]; then
+    echo "⚠️  未找到 libmimalloc.a,使用动态链接"
+    MIMALLOC_LIB="-lmimalloc"
+fi
+
+OPENBLAS_LIB=$(find /usr/lib -name "libopenblas.a" 2>/dev/null | head -n 1)
+if [ -z "$OPENBLAS_LIB" ]; then
+    echo "⚠️  未找到 libopenblas.a,使用 pkg-config"
+    OPENBLAS_LIB=$(pkg-config --libs openblas)
+fi
+
+export CC=clang
+export CXX=clang++
+export COMMON_FLAGS="-fno-math-errno -fno-trapping-math"
 export CFLAGS="$COMMON_FLAGS"
 export CXXFLAGS="$COMMON_FLAGS"
-MIMALLOC_STATIC=$(find /usr/lib -name "libmimalloc.a" 2>/dev/null | head -n 1)
-if [ -n "$MIMALLOC_STATIC" ]; then
-    EXT_LIBS="$MIMALLOC_STATIC"
-else
-    EXT_LIBS="-l:libmimalloc.so"
-fi
-export LDFLAGS="-fuse-ld=mold -flto=thin -Wl,--icf=all -Wl,--gc-sections $EXT_LIBS"
+export LDFLAGS="-fuse-ld=mold -Wl,-s -Wl,--gc-sections $MIMALLOC_LIB"
 
-OPENBLAS_LIB="/usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblas.a"
-OPENBLAS_INC="/usr/include"
-
-# ─── 4. 构建 ─────────────────────────────────────────────────────────
+# 4. build
 cd llama.cpp
-
 rm -rf build
 
 cmake -B build -G Ninja \
     -DBUILD_SHARED_LIBS=OFF \
     -DGGML_STATIC=ON \
-    -DGGML_LTO=ON \
+    -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
     -DGGML_NATIVE=ON \
     -DGGML_BLAS=ON \
     -DGGML_BLAS_VENDOR=OpenBLAS \
     -DBLAS_LIBRARIES="$OPENBLAS_LIB;-lm;-lpthread" \
+    -DGGML_OPENMP=OFF \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_C_FLAGS="$CFLAGS" \
     -DCMAKE_CXX_FLAGS="$CXXFLAGS" \
@@ -52,20 +54,17 @@ cmake -B build -G Ninja \
 
 ninja -C build llama-server llama-cli
 
-# ─── 5. 环境 ─────────────────────────────────────────────────
+# 5. env
 if ! grep -q "function llama-server()" ~/.bashrc; then
 cat << 'EOF' >> ~/.bashrc
 
 # ── llama.cpp ──
 function llama-server() {
-    local PHY_CORES=$(hwloc-calc --number-of core all 2>/dev/null || nproc --all)
-    export OMP_NUM_THREADS=$PHY_CORES
-    export OPENBLAS_NUM_THREADS=$PHY_CORES
-    export OMP_PROC_BIND=close
-    export OMP_PLACES=cores
+    local PHY_CORES=$(grep -E '^core id|^physical id' /proc/cpuinfo | xargs -L2 echo | sort -u | wc -l)
+    export MIMALLOC_PAGE_RESET=0
     export MIMALLOC_LARGE_OS_PAGES=1
-    export MIMALLOC_USE_HUGE_OS_PAGES=1
-    export MIMALLOC_EAGER_COMMIT=1
+    export MIMALLOC_ARENA_EAGER_COMMIT=2
+    export OPENBLAS_NUM_THREADS=$PHY_CORES
     if [[ "$1" == "cli" ]]; then
         shift
         "$HOME/llama.cpp/build/bin/llama-cli" "$@"
