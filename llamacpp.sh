@@ -38,6 +38,7 @@ export LDFLAGS="-fuse-ld=mold -Wl,-s -Wl,--gc-sections $MIMALLOC_LIB"
 cd llama.cpp
 rm -rf build
 
+echo "BLAS+openmp会变慢所以关闭"
 cmake -B build -G Ninja \
     -DBUILD_SHARED_LIBS=OFF \
     -DGGML_STATIC=ON \
@@ -55,16 +56,17 @@ cmake -B build -G Ninja \
 ninja -C build llama-server llama-cli
 
 # 5. env
+echo "不设置blas线程或者限制为1速度最快"
+
 if ! grep -q "function llama-server()" ~/.bashrc; then
 cat << 'EOF' >> ~/.bashrc
 
 # ── llama.cpp ──
 function llama-server() {
-    local PHY_CORES=$(grep -E '^core id|^physical id' /proc/cpuinfo | xargs -L2 echo | sort -u | wc -l)
     export MIMALLOC_PAGE_RESET=0
-    export MIMALLOC_LARGE_OS_PAGES=1
-    export MIMALLOC_ARENA_EAGER_COMMIT=2
-    export OPENBLAS_NUM_THREADS=$PHY_CORES
+    export MIMALLOC_LARGE_OS_PAGES=0
+    export MIMALLOC_ARENA_EAGER_COMMIT=0
+    #export OPENBLAS_NUM_THREADS=1
     if [[ "$1" == "cli" ]]; then
         shift
         "$HOME/llama.cpp/build/bin/llama-cli" "$@"
