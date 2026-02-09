@@ -29,10 +29,14 @@ fi
 
 export CC=clang
 export CXX=clang++
-export COMMON_FLAGS="-fno-math-errno -fno-trapping-math"
+export COMMON_FLAGS="-O3 \
+    -fno-math-errno -fno-trapping-math \
+    -mllvm -polly -mllvm -polly-vectorizer=stripmine"
 export CFLAGS="$COMMON_FLAGS"
 export CXXFLAGS="$COMMON_FLAGS"
-export LDFLAGS="-fuse-ld=mold -Wl,-s -Wl,--gc-sections $MIMALLOC_LIB"
+export LDFLAGS="-fuse-ld=mold \
+    -Wl,-O3,--icf=all,--gc-sections \
+    $MIMALLOC_LIB"
 
 # 4. build
 cd llama.cpp
@@ -42,13 +46,12 @@ echo "BLAS+openmp会变慢所以关闭"
 cmake -B build -G Ninja \
     -DBUILD_SHARED_LIBS=OFF \
     -DGGML_STATIC=ON \
-    -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
     -DGGML_NATIVE=ON \
     -DGGML_BLAS=ON \
-    -DGGML_BLAS_VENDOR=OpenBLAS \
     -DBLAS_LIBRARIES="$OPENBLAS_LIB;-lm;-lpthread" \
     -DGGML_OPENMP=OFF \
     -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=THIN \
     -DCMAKE_C_FLAGS="$CFLAGS" \
     -DCMAKE_CXX_FLAGS="$CXXFLAGS" \
     -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS"
