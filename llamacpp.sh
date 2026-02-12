@@ -5,7 +5,7 @@ set -e
 sudo apt install -y \
   clang \
   mold \
-  libopenblas-dev libmimalloc-dev \
+  libmimalloc-dev \
   cmake ninja-build ccache pkg-config \
   libcurl4-openssl-dev git
 
@@ -15,12 +15,10 @@ if [ ! -d "llama.cpp" ]; then
 fi
 
 # 3. config
-if [ $(cat /proc/sys/vm/nr_hugepages) -lt 512 ]; then
-    echo "⚡ 正在申请 Huge Pages (需 sudo)..."
-    echo 512 | sudo tee /proc/sys/vm/nr_hugepages
-fi
+echo "vm.nr_hugepages = 1024" | sudo tee /etc/sysctl.d/90-hugepages.conf >/dev/null
+sudo sysctl -p /etc/sysctl.d/90-hugepages.conf >/dev/null
+
 MIMALLOC_LIB=$(find /usr/lib/x86_64-linux-gnu -name "libmimalloc.so" 2>/dev/null | head -n 1)
-OPENBLAS_LIB=$(find /usr/lib -name "libopenblas.a" 2>/dev/null | head -n 1)
 export CC="ccache clang"
 export CXX="ccache clang++"
 export COMMON_FLAGS="-march=native -mtune=native -O3 \
@@ -40,8 +38,6 @@ rm -rf build
 cmake -B build -G Ninja \
     -DBUILD_SHARED_LIBS=OFF \
     -DGGML_STATIC=ON \
-    -DGGML_BLAS=ON \
-    -DBLAS_LIBRARIES="$OPENBLAS_LIB;-lm;-lpthread" \
     -DGGML_OPENMP=OFF \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_C_FLAGS="$CFLAGS" \
@@ -50,25 +46,22 @@ cmake -B build -G Ninja \
 ninja -C build llama-server llama-cli
 
 # 5. env
-if ! grep -q "function llama-server()" ~/.bashrc; then
-cat << 'EOF' >> ~/.bashrc
+grep -q 'llama_server()' ~/.bashrc || cat <<'EOF' >> ~/.bashrc
 
-# ── llama.cpp ──
-function llama-server() {
+#llama.cpp
+llama-server() {
     export MIMALLOC_PAGE_RESET=0
     export MIMALLOC_LARGE_OS_PAGES=1
-    #export OPENBLAS_NUM_THREADS=1
+    export MIMALLOC_RESERVE_HUGE_PAGES=1024
     if [[ "$1" == "cli" ]]; then
         shift
-        "$HOME/llama.cpp/build/bin/llama-cli" "$@"
+        "$HOME/llama.cpp/build/bin/llama-cli" "$@" --numa distribute
     else
-        "$HOME/llama.cpp/build/bin/llama-server" "$@"
+        "$HOME/llama.cpp/build/bin/llama-server" "$@" --numa distribute
     fi
 }
 EOF
-fi
-echo "BLAS+openmp会变慢所以关闭"
-echo "不设置blas线程或者限制为1速度最快"
+
 echo "───────────────────────────────────────────────"
 echo " 构建完成!"
 echo " 请执行 source ~/.bashrc 加载环境"
