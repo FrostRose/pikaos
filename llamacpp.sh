@@ -15,6 +15,7 @@ if [ ! -d "llama.cpp" ]; then
 fi
 
 # 3. config
+echo " 大页内存设置1024最佳再往上反而下降了"
 echo "vm.nr_hugepages = 1024" | sudo tee /etc/sysctl.d/90-hugepages.conf >/dev/null
 sudo sysctl -p /etc/sysctl.d/90-hugepages.conf >/dev/null
 
@@ -50,15 +51,12 @@ grep -q 'llama_server()' ~/.bashrc || cat <<'EOF' >> ~/.bashrc
 
 #llama.cpp
 llama-server() {
-    export MIMALLOC_PAGE_RESET=0
-    export MIMALLOC_LARGE_OS_PAGES=1
-    export MIMALLOC_RESERVE_HUGE_PAGES=1024
-    if [[ "$1" == "cli" ]]; then
-        shift
-        "$HOME/llama.cpp/build/bin/llama-cli" "$@" --numa distribute
-    else
-        "$HOME/llama.cpp/build/bin/llama-server" "$@" --numa distribute
-    fi
+    local cmd="$HOME/llama.cpp/build/bin/llama-server"
+    [[ "$1" == "cli" ]] && { shift; cmd="$HOME/llama.cpp/build/bin/llama-cli"; }
+    MIMALLOC_PAGE_RESET=0 \
+    MIMALLOC_LARGE_OS_PAGES=1 \
+    MIMALLOC_RESERVE_HUGE_PAGES=1024 \
+        "$cmd" "$@" --numa distribute
 }
 EOF
 
