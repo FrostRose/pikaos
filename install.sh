@@ -21,7 +21,7 @@ fi
 # 2. 安装核心包
 sudo apt install -y \
   gdm3 flatpak fonts-noto-cjk git ibus-libpinyin \
-  preload zram-tools adb fastboot thermald nala irqbalance f2fs-tools
+  preload thermald irqbalance
 
 # 3. 卸载冗余
 sudo apt purge -y fortune-* debian-reference-* malcontent-* yelp \
@@ -58,7 +58,6 @@ elif [ "$c" == "2" ]; then
     sudo systemctl disable --now zramswap
     sudo systemctl mask zramswap
 fi
-
 
 
 # 6. 最终清理
