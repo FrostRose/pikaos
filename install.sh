@@ -14,7 +14,7 @@ ask_run() {
 # 1. 更新与清理
 sudo apt update
 if ask_run "Deep Cleanup (GNOME/Flatpak/Firefox)?" "N"; then
-    sudo apt purge -y "gnome*" "pika-gnome*" "chromium*"
+    sudo apt purge -y "gnome*" "pika-*" "chromium*"
     sudo apt autoremove --purge -y
 fi
 
@@ -32,11 +32,18 @@ flatpak remote-delete flathub || true
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo --user
 flatpak remote-modify flathub --url=https://mirrors.ustc.edu.cn/flathub --user
 flatpak install --user -y flathub \
-  com.github.tchx84.Flatseal org.libreoffice.LibreOffice \
-  net.cozic.joplin_desktop io.github.ungoogled_software.ungoogled_chromium \
-  net.agalwood.Motrix org.gimp.GIMP com.dec05eba.gpu_screen_recorder \
-  com.mattjakeman.ExtensionManager org.localsend.localsend_app \
-  com.cherry_ai.CherryStudio com.usebottles.bottles org.telegram.desktop page.tesk.Refine
+  io.gitlab.librewolf-community \
+  com.github.tchx84.Flatseal \
+  org.libreoffice.LibreOffice \
+  net.cozic.joplin_desktop \
+  net.agalwood.Motrix \
+  org.gimp.GIMP \
+  com.dec05eba.gpu_screen_recorder \
+  com.mattjakeman.ExtensionManager \
+  org.localsend.localsend_app \
+  com.cherry_ai.CherryStudio \
+  com.usebottles.bottles \
+  page.tesk.Refine
 
 # 5. 系统优化
 sudo journalctl --vacuum-size=100M
