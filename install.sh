@@ -14,7 +14,7 @@ ask_run() {
 # 1. 更新与清理
 sudo apt update
 if ask_run "Deep Cleanup (GNOME/Flatpak/Firefox)?" "N"; then
-    sudo apt purge -y "gnome*" "pika-*" "chromium*"
+    sudo apt purge -y "gnome*" "pika-gnome-*" "chromium*"
     sudo apt autoremove --purge -y
 fi
 
