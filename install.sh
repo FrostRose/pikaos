@@ -15,8 +15,8 @@ ask_run() {
 sudo apt update
 if ask_run "Deep Cleanup Desktop ?" "N"; then
     sudo apt purge -y "gnome*" "pika-gnome-*" "pikman-*" "pika-device-manager" "chromium*"
-    sudo apt install gdm3
-    sudo apt autoremove --purge -y
+    sudo apt install gdm3 -y
+    sudo apt autoremove -y
 fi
 
 # 2. 安装核心包
@@ -25,7 +25,7 @@ sudo apt install -y \
   preload thermald irqbalance
 
 # 3. 卸载冗余
-sudo apt purge -y fortune-* debian-reference-* malcontent-* yelp \
+sudo apt remove -y fortune-* debian-reference-* malcontent-* yelp \
   gnome-user-share gnome-sushi apx
 
 # 4. Flatpak 配置
