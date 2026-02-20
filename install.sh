@@ -59,19 +59,9 @@ elif [ "$c" == "2" ]; then
     sudo systemctl mask zramswap
 fi
 
-# 6. 自动配置 F2FS 挂载 (fstab)
-F2FS_PART=$(lsblk -f -n -l | grep f2fs | awk '{print $1}' | head -n 1 || true)
-if [ -n "$F2FS_PART" ]; then
-    UUID=$(blkid -s UUID -o value /dev/$F2FS_PART)
-    if ! grep -q "$UUID" /etc/fstab; then
-        if ask_run "Found F2FS partition $F2FS_PART. Mount to /home?" "Y"; then
-            echo "UUID=$UUID  /home  f2fs  defaults,atgc,gc_merge,noatime,nodiscard  0  2" | sudo tee -a /etc/fstab
-            echo "F2FS mount added to /etc/fstab."
-        fi
-    fi
-fi
 
-# 7. 最终清理
+
+# 6. 最终清理
 sudo apt autoremove --purge -y
 sudo apt clean
 
