@@ -14,7 +14,7 @@ ask_run() {
 # 1. 更新与清理
 sudo apt update
 if ask_run "Deep Cleanup Desktop ?" "N"; then
-    sudo apt purge -y "gnome*" "pika-gnome-*" "pikman-*" "pika-device-manager" "chromium*"
+    sudo apt purge -y "gnome*" "showtime" "otter*" "pika-gnome-*" "pikman-*" "pika-device-manager" "chromium*"
     sudo apt install gdm3 -y
     sudo apt autoremove -y
 fi
@@ -42,26 +42,11 @@ flatpak install --user -y flathub \
   com.dec05eba.gpu_screen_recorder \
   com.mattjakeman.ExtensionManager \
   org.localsend.localsend_app \
-  com.cherry_ai.CherryStudio \
   com.usebottles.bottles \
   page.tesk.Refine
 flatpak list --app --columns=application | while read app; do
     flatpak override --user --nosocket=x11 --nosocket=fallback-x11 "$app"
 done
-# 5. 系统优化
-sudo journalctl --vacuum-size=100M
-sudo systemctl enable --now fstrim.timer thermald irqbalance
-
-echo "1) Enable zRAM | 2) Disable zRAM"
-read -p "Choice: " c
-if [ "$c" == "1" ]; then
-    echo -e "ALGO=lz4\nPERCENT=100\nPRIORITY=100" | sudo tee /etc/default/zramswap > /dev/null
-    sudo systemctl enable --now zramswap
-elif [ "$c" == "2" ]; then
-    sudo systemctl disable --now zramswap
-    sudo systemctl mask zramswap
-fi
-
 
 # 6. 最终清理
 sudo apt autoremove --purge -y
